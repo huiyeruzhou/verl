@@ -6,7 +6,7 @@ from openai.types.chat import ChatCompletion
 import os
 clients = [
     AsyncOpenAI(
-    base_url="http://localhost:3000/v1",
+    base_url="http://localhost:8000/v1",
     api_key="sk-",
 )
 ]
@@ -33,7 +33,7 @@ async def call_llm(model, prompt: str, n: int = 1, enable_thinking: bool = True)
     response = await client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
-        max_tokens=12288,
+        max_tokens=40960-1024,
         temperature=1.0,
         n=n,
         # extra_body={"chat_template_kwargs": {"enable_thinking": enable_thinking}},

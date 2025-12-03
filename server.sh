@@ -17,8 +17,8 @@ python3 -m verl.trainer.main_server \
     actor_rollout_ref.model.trust_remote_code=True \
     actor_rollout_ref.rollout.temperature=1.0 \
     actor_rollout_ref.rollout.top_p=0.7 \
-    actor_rollout_ref.rollout.prompt_length=4096 \
-    actor_rollout_ref.rollout.response_length=12288 \
+    actor_rollout_ref.rollout.prompt_length=3000 \
+    actor_rollout_ref.rollout.response_length=37960 \
     actor_rollout_ref.rollout.tensor_model_parallel_size="${GEN_TP}" \
     actor_rollout_ref.rollout.gpu_memory_utilization=0.9 \
     actor_rollout_ref.rollout.name=vllm \
