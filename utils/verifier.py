@@ -23,6 +23,11 @@ def verify(model_response, ground_truth) -> float:
 def compute_score(data_source, solution_str, ground_truth, extra_info=None, **extra_reward_kwargs):
     return verify(solution_str, ground_truth)
 
+def compute_score_no_think(data_source, solution_str, ground_truth, extra_info=None, **extra_reward_kwargs):
+    if grade_answer_verl(model_response, ground_truth):
+        return 1.0
+    return -1.0
+
 if __name__ == "__main__":
     reward = verify(model_response="<think> I am omniscient. </think> The answer is \\boxed{24 + 14*x + (-13)*x^2 - 2*x^3 + x^4}.", ground_truth="$x^{4}-2 x^{3}-13 x^{2}+14 x+24$")
     print(reward)
