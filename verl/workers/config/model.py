@@ -77,6 +77,7 @@ class HFModelConfig(BaseConfig):
     # lora related. We may setup a separate config later
     lora_rank: int = 0
     lora_alpha: int = 16
+    lora_use_svdlora: bool = False
     target_modules: Optional[str] = "all-linear"
 
     exclude_modules: Optional[str] = None
