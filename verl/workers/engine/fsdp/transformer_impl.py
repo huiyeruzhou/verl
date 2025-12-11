@@ -266,6 +266,8 @@ class FSDPEngine(BaseEngine):
                 "exclude_modules": convert_to_regular_types(self.model_config.exclude_modules),
                 "bias": "none",
             }
+            if self.config.model.get("lora_use_svdlora", False):
+                    lora_config["use_svdlora"] = True
             module = get_peft_model(module, LoraConfig(**lora_config))
 
         return module

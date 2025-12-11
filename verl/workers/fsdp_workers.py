@@ -436,6 +436,8 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                     "exclude_modules": convert_to_regular_types(self.config.model.exclude_modules),
                     "bias": "none",
                 }
+                if self.config.model.get("lora_use_svdlora", False):
+                    lora_config["use_svdlora"] = True
                 actor_module = get_peft_model(actor_module, LoraConfig(**lora_config))
 
         self.use_orig_params = fsdp_config.get("use_orig_params", False)
@@ -1330,6 +1332,8 @@ class CriticWorker(Worker, DistProfilerExtension):
                     "target_modules": convert_to_regular_types(self.config.model.target_modules),
                     "bias": "none",
                 }
+                if self.config.model.get("lora_use_svdlora", False):
+                    lora_config["use_svdlora"] = True
                 critic_module = get_peft_model(critic_module, LoraConfig(**lora_config))
 
         if self.rank == 0:
