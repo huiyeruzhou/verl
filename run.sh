@@ -1,0 +1,69 @@
+# Tested successfully on the hiyouga/verl:ngc-th2.6.0-cu126-vllm0.8.4-flashinfer0.2.2-cxx11abi0 image.
+# It outperforms the Qwen2 7B base model by two percentage points on the test set of GSM8K.
+
+# ray job submit --runtime-env /opt/tiger/open_verl/verl/trainer/runtime_env.yaml -- bash /opt/tiger/open_verl/run_qwen3-8b.sh
+set -x
+export HDFS_HOME=/mnt/hdfs/hongli/projects/verl_demo
+export DATA_HOME=$HDFS_HOME/data
+export NAME=sanitycheck
+python3 -m verl.trainer.main_ppo \
+    algorithm.adv_estimator=grpo \
+    data.train_files=$DATA_HOME/polaris-data-53K.parquet \
+    data.val_files=[\"$DATA_HOME/aime25.parquet\",\"$DATA_HOME/aime24.parquet\"] \
+    actor_rollout_ref.model.lora_rank=1\
+    actor_rollout_ref.model.lora_alpha=32\
+    +actor_rollout_ref.model.lora_use_svdlora=True \
+    actor_rollout_ref.rollout.load_format=safetensors \
+    actor_rollout_ref.model.use_shm=True \
+    actor_rollout_ref.rollout.layered_summon=True \
+    data.filter_overlong_prompts=True \
+    data.filter_overlong_prompts_workers=32 \
+    custom_reward_function.path=/opt/tiger/open_verl/utils/verifier.py \
+    data.train_batch_size=16 \
+    data.val_batch_size=512 \
+    data.max_prompt_length=1024 \
+    data.max_response_length=1024\
+    actor_rollout_ref.actor.fsdp_config.fsdp_size=8 \
+    actor_rollout_ref.model.path=/mnt/hdfs/hongli/model/Qwen2.5-0.5B-Instruct \
+    actor_rollout_ref.actor.optim.lr=1e-5 \
+    actor_rollout_ref.model.use_remove_padding=True \
+    actor_rollout_ref.actor.ppo_mini_batch_size=16 \
+    actor_rollout_ref.actor.use_kl_loss=False \
+    actor_rollout_ref.actor.kl_loss_coef=0.000 \
+    actor_rollout_ref.actor.kl_loss_type=low_var_kl \
+    actor_rollout_ref.actor.entropy_coeff=0 \
+    actor_rollout_ref.actor.clip_ratio_high=0.26 \
+    actor_rollout_ref.actor.use_dynamic_bsz=True \
+    actor_rollout_ref.actor.ppo_max_token_len_per_gpu=32768 \
+    actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=65536 \
+    actor_rollout_ref.rollout.log_prob_max_token_len_per_gpu=65536 \
+    actor_rollout_ref.model.enable_gradient_checkpointing=True \
+    actor_rollout_ref.actor.fsdp_config.param_offload=True \
+    actor_rollout_ref.actor.fsdp_config.optimizer_offload=True \
+    actor_rollout_ref.rollout.tensor_model_parallel_size=1 \
+    actor_rollout_ref.rollout.name=vllm \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.8 \
+    actor_rollout_ref.rollout.temperature=0.8 \
+    actor_rollout_ref.rollout.top_p=1.0 \
+    actor_rollout_ref.rollout.top_k=-1 \
+    actor_rollout_ref.rollout.enable_chunked_prefill=True \
+    actor_rollout_ref.rollout.n=8 \
+    actor_rollout_ref.ref.fsdp_config.param_offload=True \
+    actor_rollout_ref.rollout.val_kwargs.do_sample=True \
+    actor_rollout_ref.rollout.val_kwargs.temperature=0.8 \
+    actor_rollout_ref.rollout.val_kwargs.top_p=0.7 \
+    actor_rollout_ref.rollout.val_kwargs.n=8 \
+    actor_rollout_ref.rollout.max_num_batched_tokens=96000\
+    algorithm.use_kl_in_reward=False \
+    trainer.critic_warmup=0 \
+    trainer.logger='["console","wandb"]' \
+    trainer.default_local_dir=$HDFS_HOME/$NAME \
+    trainer.validation_data_dir=$HDFS_HOME/$NAME/dump_val \
+    trainer.rollout_data_dir=$HDFS_HOME/$NAME/dump_rollout \
+    trainer.project_name='verl_hongli' \
+    trainer.experiment_name=$NAME \
+    trainer.n_gpus_per_node=$ARNOLD_WORKER_GPU \
+    trainer.nnodes=$ARNOLD_WORKER_NUM \
+    trainer.save_freq=1 \
+    trainer.test_freq=100 \
+    trainer.total_epochs=12

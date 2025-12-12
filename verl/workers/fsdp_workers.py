@@ -420,7 +420,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 # Copy adapter to local if needed
                 local_adapter_path = copy_to_local(lora_adapter_path, use_shm=self.config.model.get("use_shm", False))
 
-                actor_module = PeftModel.from_pretrained(actor_module, local_adapter_path, is_trainable=True)
+                actor_module = PeftModel.from_pretrained(actor_module, local_adapter_path, is_trainable=True, use_svdlora=self.config.model.get("lora_use_svdlora", False))
                 peft_config = actor_module.peft_config["default"]
                 # Ensure task_type is TaskType enum, not string
                 if isinstance(peft_config.task_type, str):
@@ -1058,12 +1058,15 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 peft_config["task_type"] = peft_config["task_type"].value
                 peft_config["peft_type"] = peft_config["peft_type"].value
                 peft_config["target_modules"] = list(peft_config["target_modules"])
+                peft_config['use_svdlora'] = peft_config.get('use_svdlora', False)
             try:
                 if fsdp_version(self.actor_module_fsdp) > 0:
                     self.actor_module_fsdp = self.actor_module_fsdp.to(get_device_name())
                     lora_params = layered_summon_lora_params(self.actor_module_fsdp)
+                    svd_lora_params = layered_summon_lora_params(self.actor_module_fsdp, convert_svdlora=False)
                     if dist.get_rank() == 0:
                         save_file(lora_params, os.path.join(lora_save_path, "adapter_model.safetensors"))
+                        save_file(svd_lora_params, os.path.join(lora_save_path, "adapter_model.svd.safetensors"))
                         with open(os.path.join(lora_save_path, "adapter_config.json"), "w", encoding="utf-8") as f:
                             json.dump(peft_config, f, ensure_ascii=False, indent=4)
             except Exception as e:
